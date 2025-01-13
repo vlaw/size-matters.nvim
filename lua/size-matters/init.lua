@@ -4,7 +4,24 @@ local notifications = require "size-matters.notifications"
 local config = require("size-matters.config").defaults
 
 ---@param user_config? Config
-function M.setup(user_config) config = vim.tbl_deep_extend("keep", user_config or {}, config) end
+function M.setup(user_config)
+  config = vim.tbl_deep_extend("keep", user_config or {}, config)
+
+  local cmd = vim.api.nvim_create_user_command
+  cmd("FontSizeUp", function(num) M.update_font("grow", num.args) end, { nargs = "?" })
+  cmd("FontSizeDown", function(num) M.update_font("shrink", num.args) end, { nargs = "?" })
+  cmd("FontReset", function() M.reset_font() end, {})
+
+  if config.default_mappings then
+    local map = vim.keymap.set
+    map("n", "<C-+>", function() M.update_font "grow" end, { desc = "Increase font size" })
+    map("n", "<C-S-+>", function() M.update_font "grow" end, { desc = "Increase font size" })
+    map("n", "<C-->", function() M.update_font "shrink" end, { desc = "Decrease font size" })
+    map("n", "<C-ScrollWheelUp>", function() M.update_font "grow" end, { desc = "Increase font size" })
+    map("n", "<C-ScrollWheelDown>", function() M.update_font "shrink" end, { desc = "Decrease font size" })
+    map("n", "<A-C-=>", M.reset_font, { desc = "Reset to default font" })
+  end
+end
 
 ---@type string?
 local guifont
@@ -49,21 +66,6 @@ function M.reset_font()
 
 	if not config.notifications or not config.notifications.enable then return end
 	notifications.send(" " .. config.reset_font, config.notifications)
-end
-
-local cmd = vim.api.nvim_create_user_command
-cmd("FontSizeUp", function(num) M.update_font("grow", num.args) end, { nargs = "?" })
-cmd("FontSizeDown", function(num) M.update_font("shrink", num.args) end, { nargs = "?" })
-cmd("FontReset", function() M.reset_font() end, {})
-
-if config.default_mappings then
-	local map = vim.keymap.set
-	map("n", "<C-+>", function() M.update_font "grow" end, { desc = "Increase font size" })
-	map("n", "<C-S-+>", function() M.update_font "grow" end, { desc = "Increase font size" })
-	map("n", "<C-->", function() M.update_font "shrink" end, { desc = "Decrease font size" })
-	map("n", "<C-ScrollWheelUp>", function() M.update_font "grow" end, { desc = "Increase font size" })
-	map("n", "<C-ScrollWheelDown>", function() M.update_font "shrink" end, { desc = "Decrease font size" })
-	map("n", "<A-C-=>", M.reset_font, { desc = "Reset to default font" })
 end
 
 return M
